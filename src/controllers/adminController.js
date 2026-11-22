@@ -71,17 +71,30 @@ async function dashboard(req, res, next) {
 
 // ---- Products ----
 
+function productsPageRedirect(req) {
+  const page = Number(req.query.page);
+  return Number.isSafeInteger(page) && page > 1 ? `/admin/products?page=${page}` : '/admin/products';
+}
+
 async function listProducts(req, res, next) {
   try {
-    const [products, categories] = await Promise.all([
-      query(
-        `SELECT products.*, categories.name AS category_name
-         FROM products LEFT JOIN categories ON categories.id = products.category_id
-         ORDER BY products.active DESC, products.name ASC`
-      ).then((r) => r.rows),
+    const pageSize = 10;
+    const requestedPage = Number(req.query.page);
+    const safeRequestedPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const [categories, totalProducts] = await Promise.all([
       query('SELECT * FROM categories ORDER BY name').then((r) => r.rows),
+      query('SELECT COUNT(*) AS count FROM products').then((r) => Number(r.rows[0].count)),
     ]);
-    res.render('admin/products', { title: 'Products', products, categories });
+    const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
+    const currentPage = Math.min(safeRequestedPage, totalPages);
+    const { rows: products } = await query(
+      `SELECT products.*, categories.name AS category_name
+       FROM products LEFT JOIN categories ON categories.id = products.category_id
+       ORDER BY products.active DESC, products.name ASC
+       LIMIT $1 OFFSET $2`,
+      [pageSize, (currentPage - 1) * pageSize]
+    );
+    res.render('admin/products', { title: 'Products', products, categories, currentPage, totalPages, totalProducts, pageSize });
   } catch (err) {
     next(err);
   }
@@ -134,10 +147,28 @@ async function updateProduct(req, res, next) {
       ]
     );
     setFlash(req, 'success', `Product "${name}" updated.`);
-    res.redirect('/admin/products');
+    res.redirect(productsPageRedirect(req));
   } catch (err) {
     setFlash(req, 'error', `Could not update product: ${err.message}`);
-    res.redirect('/admin/products');
+    res.redirect(productsPageRedirect(req));
+  }
+}
+
+async function deleteProduct(req, res, next) {
+  try {
+    const { rows } = await query('DELETE FROM products WHERE id = $1 RETURNING name', [req.params.id]);
+    if (!rows[0]) {
+      setFlash(req, 'error', 'Could not delete product: product not found.');
+      return res.redirect(productsPageRedirect(req));
+    }
+    setFlash(req, 'success', `Product "${rows[0].name}" deleted.`);
+    res.redirect(productsPageRedirect(req));
+  } catch (err) {
+    if (err.code === '23503') {
+      setFlash(req, 'error', 'This product has sales or inventory history and cannot be deleted. Deactivate it instead.');
+      return res.redirect(productsPageRedirect(req));
+    }
+    next(err);
   }
 }
 
@@ -290,6 +321,7 @@ module.exports = {
   listProducts,
   createProduct,
   updateProduct,
+  deleteProduct,
   createCategory,
   listUsers,
   createUser,

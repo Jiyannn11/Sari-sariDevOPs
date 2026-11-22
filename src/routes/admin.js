@@ -11,6 +11,7 @@ router.get('/api/sales-chart', ctrl.salesChartData);
 router.get('/products', ctrl.listProducts);
 router.post('/products', ctrl.createProduct);
 router.post('/products/:id', ctrl.updateProduct);
+router.post('/products/:id/delete', ctrl.deleteProduct);
 router.post('/categories', ctrl.createCategory);
 
 router.get('/users', ctrl.listUsers);

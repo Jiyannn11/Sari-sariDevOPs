@@ -40,10 +40,10 @@
   <div class="card">
     <h2>All Products</h2>
     <div class="table-scroll">
-      <table class="table">
+      <table class="table products-table">
         <thead>
           <tr>
-            <th>Name</th><th>Category</th><th>Unit</th><th>Cost</th><th>Price</th><th>Stock</th><th>Reorder</th><th>Active</th><th></th>
+            <th>Name</th><th>Category</th><th>Unit</th><th>Cost</th><th>Price</th><th>Stock</th><th>Reorder</th><th>Active</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -66,13 +66,36 @@
                 <td><input form="<%= fid %>" type="number" name="reorder_level" value="<%= p.reorder_level %>" size="4" /></td>
                 <td><input form="<%= fid %>" type="checkbox" name="active" value="1" <%= p.active ? 'checked' : '' %> /></td>
                 <td>
-                  <form id="<%= fid %>" method="POST" action="/admin/products/<%= p.id %>"></form>
+                  <form id="<%= fid %>" method="POST" action="/admin/products/<%= p.id %>?page=<%= currentPage %>"></form>
                   <button form="<%= fid %>" type="submit" class="btn btn-small">Save</button>
+                  <form method="POST" action="/admin/products/<%= p.id %>/delete?page=<%= currentPage %>" class="inline-form" onsubmit="return confirm('Delete this product? This cannot be undone.');">
+                    <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                  </form>
                 </td>
             </tr>
           <% }) %>
         </tbody>
       </table>
+    </div>
+    <div class="product-pagination">
+      <span class="muted">
+        Showing <%= totalProducts === 0 ? 0 : (currentPage - 1) * pageSize + 1 %>–<%= Math.min(currentPage * pageSize, totalProducts) %> of <%= totalProducts %> products
+      </span>
+      <% if (totalPages > 1) { %>
+        <nav class="pagination-controls" aria-label="Product list pages">
+          <% if (currentPage > 1) { %>
+            <a class="btn btn-secondary btn-small" href="/admin/products?page=<%= currentPage - 1 %>">Previous</a>
+          <% } else { %>
+            <span class="btn btn-secondary btn-small" aria-disabled="true">Previous</span>
+          <% } %>
+          <span class="pagination-current">Page <%= currentPage %> of <%= totalPages %></span>
+          <% if (currentPage < totalPages) { %>
+            <a class="btn btn-secondary btn-small" href="/admin/products?page=<%= currentPage + 1 %>">Next</a>
+          <% } else { %>
+            <span class="btn btn-secondary btn-small" aria-disabled="true">Next</span>
+          <% } %>
+        </nav>
+      <% } %>
     </div>
   </div>
 </main>
