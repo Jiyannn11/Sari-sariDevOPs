@@ -56,16 +56,25 @@ a { color: var(--blue); }
   text-shadow: 0 0 16px rgba(155, 92, 255, 0.65);
 }
 .brand-mark {
-  display: inline-grid;
-  place-items: center;
+  display: inline-block;
   width: 2rem;
   height: 2rem;
   margin-right: 0.35rem;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary), var(--blue));
-  color: #ffffff;
-  font-weight: 900;
+  object-fit: cover;
+  vertical-align: middle;
   box-shadow: 0 0 18px rgba(155, 92, 255, 0.7), 0 0 24px rgba(86, 168, 255, 0.25);
+}
+.brand-mark-login {
+  display: block;
+  width: 10rem;
+  height: 10rem;
+  margin: 0 auto;
+  border-radius: 12px;
+}
+.login-brand {
+  display: flex;
+  justify-content: center;
 }
 .topbar-nav { display: flex; gap: 1rem; flex: 1; }
 .topbar-nav a { text-decoration: none; color: var(--muted); font-weight: 600; }
