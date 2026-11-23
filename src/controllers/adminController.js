@@ -73,7 +73,11 @@ async function dashboard(req, res, next) {
 
 function productsPageRedirect(req) {
   const page = Number(req.query.page);
-  return Number.isSafeInteger(page) && page > 1 ? `/admin/products?page=${page}` : '/admin/products';
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const params = [];
+  if (Number.isSafeInteger(page) && page > 1) params.push(`page=${page}`);
+  if (search) params.push(`search=${encodeURIComponent(search)}`);
+  return `/admin/products${params.length ? `?${params.join('&')}` : ''}`;
 }
 
 async function listProducts(req, res, next) {
@@ -81,20 +85,39 @@ async function listProducts(req, res, next) {
     const pageSize = 10;
     const requestedPage = Number(req.query.page);
     const safeRequestedPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const searchParams = search ? [`%${search}%`] : [];
+    const searchFilter = search
+      ? ' WHERE products.name ILIKE $1 OR products.barcode ILIKE $1 OR categories.name ILIKE $1'
+      : '';
     const [categories, totalProducts] = await Promise.all([
       query('SELECT * FROM categories ORDER BY name').then((r) => r.rows),
-      query('SELECT COUNT(*) AS count FROM products').then((r) => Number(r.rows[0].count)),
+      query(
+        `SELECT COUNT(*) AS count
+         FROM products LEFT JOIN categories ON categories.id = products.category_id${searchFilter}`,
+        searchParams
+      ).then((r) => Number(r.rows[0].count)),
     ]);
     const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
     const currentPage = Math.min(safeRequestedPage, totalPages);
     const { rows: products } = await query(
       `SELECT products.*, categories.name AS category_name
        FROM products LEFT JOIN categories ON categories.id = products.category_id
+       ${searchFilter}
        ORDER BY products.active DESC, products.name ASC
-       LIMIT $1 OFFSET $2`,
-      [pageSize, (currentPage - 1) * pageSize]
+       LIMIT $${searchParams.length + 1} OFFSET $${searchParams.length + 2}`,
+      [...searchParams, pageSize, (currentPage - 1) * pageSize]
     );
-    res.render('admin/products', { title: 'Products', products, categories, currentPage, totalPages, totalProducts, pageSize });
+    res.render('admin/products', {
+      title: 'Products',
+      products,
+      categories,
+      currentPage,
+      totalPages,
+      totalProducts,
+      pageSize,
+      search,
+    });
   } catch (err) {
     next(err);
   }

@@ -182,10 +182,26 @@ a { color: var(--blue); }
 .products-table td:first-child input {
   min-width: 260px;
 }
+.product-search {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.product-search input {
+  width: min(360px, 100%);
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #0d0d24;
+  color: var(--text);
+}
 .form-grid input:focus, .form-grid select:focus,
 .login-card input:focus, .login-card select:focus,
 .form-inline input:focus, .form-inline select:focus,
-.table input:focus, .table select:focus,
+.table input:focus, .table select:focus, .product-search input:focus,
 #productSearch:focus, #checkoutForm input:focus {
   outline: none;
   border-color: var(--blue);
